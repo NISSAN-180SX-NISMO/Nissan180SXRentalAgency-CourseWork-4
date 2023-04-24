@@ -16,21 +16,34 @@
 #define _MenuCase static const void
 
 class Manager {
-private:
+public:
 	static DataBase<Client>* Clients;
 	static DataBase<Auto>* Autos;
 	static DataBase<Event>* Events;
+private:
 	static std::string UserInput;
 	static std::string ClientsPath;
 	static std::string AutosPath;
 	static std::string EventsPath;
-	static std::string input(const std::string& title, std::function<bool(std::string)> predicat = [](std::string) { return true; });
-	static Client* RequestClient();
-	static Auto* RequestAuto();
-	static Event* RequestEvent(std::string DriversNumber, std::string AutoNumber);
-	static Client* FindClient();
-	static Auto* FindAuto();
+	struct Request {
+		static std::string input(const std::string& title, std::function<bool(std::string)> predicat = [](std::string) { return true; });
+		static Client* Driver();
+		static Auto* Car();
+		static Event* Trade(std::string DriversNumber, std::string AutoNumber, std::string BeginDate = "", std::string EndDate = "");
+		static Client* FindClient();
+		static Auto* FindAuto();
+	};
+	static const bool DriverIsDebtor(Client* Driver);
 public:
+	enum class DBT : uint8_t {CLIENTS, AUTOS, EVENTS}; // Data Base Type
+	static const uint32_t size(DBT what);
+	static const void setRentAnAuto(Auto* Car, Event* Trade);
+	static const void setReturnAnAuto(Auto* Car);
+	static const void setMoveToRepair(Auto* Car);
+	static const void setBackFromRepair(Auto* Car);
+
+	static const bool removeClient(Client* Driver);
+
 	_MenuCase PrintClients();
 	_MenuCase PrintAutos();
 	_MenuCase PrintEvents();
@@ -39,11 +52,14 @@ public:
 	_MenuCase CreateRandClients();
 	_MenuCase InsertAuto();
 	_MenuCase CreateRandAutos();
-
 	_MenuCase RentAnAuto();
 	_MenuCase ReturnAnAuto();
 	_MenuCase MoveToRepair();
 	_MenuCase BackFromRepair();
 
+	_MenuCase RemoveClient();
+	_MenuCase ClearClient();
+
 	//_MenuCase RemoveClient();
 };
+

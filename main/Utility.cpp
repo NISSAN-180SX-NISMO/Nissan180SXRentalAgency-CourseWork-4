@@ -162,7 +162,7 @@ const void Utility::Printer::showAuto(std::ostream& out, Auto* Auto)
 		<< "| " << Auto->Brand << line(std::abs(int(30 - Auto->Brand.size())), " ")
 		<< "| " << Auto->Color << line(std::abs(int(31 - Auto->Color.size())), " ")
 		<< "| " << Auto->ReleaseYear << line(8, " ")
-		<< "| " << (Auto->inStock ? " еярэ б мюкхвхх " : "мер б мюкхвхх  ")
+		<< "| " << (Auto->inStock ? "еярэ б мюкхвхх  " : "мер б мюкхвхх   ")
 		<< "|" << std::endl;
 	out << " " << line(116, "-") << std::endl;
 }
