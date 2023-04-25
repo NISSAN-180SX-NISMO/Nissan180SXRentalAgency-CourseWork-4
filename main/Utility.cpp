@@ -83,25 +83,69 @@ bool Utility::Checking::DateIsReal(const std::string& date)
 	return true;
 }
 
+Event* Utility::Algorithms::findMin(DataBase<Event>* source)
+{
+	Event* min = nullptr;
+	auto all = source->getAll();
+	for (auto& el : all) {
+		if (!min) min = el;
+		if (_Util::getKey(min->AutoNumber) > _Util::getKey(el->AutoNumber)) min = el;
+	}
+	return min;
+}
+
+Event* Utility::Algorithms::findMax(DataBase<Event>* source)
+{
+	Event* max = nullptr;
+	auto all = source->getAll();
+	for (auto& el : all) {
+		if (!max) max = el;
+		if (_Util::getKey(max->AutoNumber) < _Util::getKey(el->AutoNumber)) max = el;
+	}
+	return max;
+}
+
 const bool Utility::Algorithms::SubStringSearch(const std::string& source, const std::string& chunk)
 {
 	int sourceSize = source.size();
-	int chunkgSize = chunk.size();
+	int chunkSize = chunk.size();
 
-	for (int i = 0; i <= sourceSize - chunkgSize; i++) {
+	for (int i = 0; i <= sourceSize - chunkSize; i++) {
 		int j;
-		for (j = 0; j < chunkgSize; j++)
+		for (j = 0; j < chunkSize; j++)
 			if (source[i + j] != chunk[j])
 				break;
-		if (j == chunkgSize)
+		if (j == chunkSize)
 			return true;
 	}
 	return false;
 }
 
-const CFL* Utility::Algorithms::DistributionSort(DataBase<Event>* source)
+DataBase<Event>* Utility::Algorithms::DistributionSort(DataBase<Event>* source)
 {
-	return nullptr; /////////////////
+	auto all = source->getAll();
+	Event* min = findMin(source);
+	Event* max = findMax(source);
+	uint32_t ls = _Util::getKey(min->AutoNumber);	// left side
+	uint32_t rs = _Util::getKey(max->AutoNumber);	// right side
+	std::vector<std::pair<int, Event*>> tmp; tmp.resize(rs - ls + 1, std::pair<int, Event*>(0,nullptr));
+
+	for (size_t i = 0; i < all.size(); i++) {
+		tmp[_Util::getKey(all[i]->AutoNumber) - ls].first++;
+		tmp[_Util::getKey(all[i]->AutoNumber) - ls].second = all[i];
+	}
+	std::vector<Event*> Sorted;
+	for (size_t i = 0; i < tmp.size(); i++)
+	{
+		for (size_t j = 0; j < tmp[i].first; j++)
+		{
+			Sorted.push_back(tmp[i].second);
+		}
+	}
+	DataBase<Event>* SortedCFL = new CFL;
+	for (auto& el : Sorted)
+		SortedCFL->insert(_Util::getKey(el->AutoNumber), el);
+	return SortedCFL;
 }
 
 std::string Utility::Printer::line(uint16_t size, const char* what)
@@ -172,7 +216,7 @@ const void Utility::Printer::showEvent(std::ostream& out, Event* Event)
 	out << "| " << Event->DriversNumber << line(17, " ")
 		<< "| " << Event->AutoNumber << line(9, " ")
 		<< "| " << "Ñ " << Event->BeginDate << " ÏÎ " << Event->BeginDate << " ";
-	switch (Event->Event) {
+	switch (Event->Act) {
 	case Event::EVENT::RENTAL: out << "| ÀÐÅÍÄÀ    |" << std::endl; break;
 	case Event::EVENT::RETURN: out << "| ÂÎÇÂÐÀÒ   |" << std::endl; break;
 	case Event::EVENT::TO_REPAIR: out << "| ÍÀ ÐÅÌÎÍÒ |" << std::endl; break;
@@ -181,29 +225,23 @@ const void Utility::Printer::showEvent(std::ostream& out, Event* Event)
 	out << " " << line(91, "-") << std::endl;
 }
 
-const void Utility::Printer::print(std::ostream& out, DataBase<Client>* DataBase)
+const void Utility::Printer::print(std::ostream& out, std::vector<Client*> elements)
 {
-	auto elements = DataBase->getAll();
 	showDriversHeader(out);
 	for (auto& element : elements)
 		showDriver(out, element);
 }
 
-const void Utility::Printer::print(std::ostream& out, DataBase<Auto>* DataBase)
+const void Utility::Printer::print(std::ostream& out, std::vector<Auto*> elements)
 {
-	auto elements = DataBase->getAll();
 	showAutosHeader(out);
 	for (auto& element : elements)
 		showAuto(out, element);
 }
 
-const void Utility::Printer::print(std::ostream& out, DataBase<Event>* DataBase)
+const void Utility::Printer::print(std::ostream& out, std::vector<Event*> elements)
 {
-	auto elements = DataBase->getAll();
 	showEventsHeader(out);
 	for (auto& element : elements)
 		showEvent(out, element);
 }
-
-
-

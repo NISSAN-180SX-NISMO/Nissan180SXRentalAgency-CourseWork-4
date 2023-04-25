@@ -10,7 +10,7 @@ struct Client {
 	std::string Address;			// format: "ул. Название Улицы д. 123"
 };
 
-struct Auto  {
+struct Auto {
 	std::string Brand;				// format: "Just brand"
 	std::string AutoNumber;			// format: "ANNNAA-NN"
 	std::string Color;				// format: "Just colour"
@@ -25,13 +25,10 @@ struct Event {
 		TO_REPAIR,					// Отправка на ремонт
 		FROM_REPAIR					// Прибытие с ремонта
 	};
-	EVENT Event;
+	EVENT Act;
 	std::string AutoNumber;			// format: "ANNNAA-NN"
 	std::string DriversNumber;		// format: "RR AA NNNNNN"
 	std::string BeginDate;			// format: "DD/MM/YYYY"
 	std::string EndDate;			// format: "DD/MM/YYYY"
+	bool operator>(const Event& other);
 };
-
-
-
-

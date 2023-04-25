@@ -41,8 +41,10 @@ public:
 	static const void setReturnAnAuto(Auto* Car);
 	static const void setMoveToRepair(Auto* Car);
 	static const void setBackFromRepair(Auto* Car);
-
 	static const bool removeClient(Client* Driver);
+	static const void clearClients(std::vector<Client*> all);
+	static const bool removeAuto(Auto* Car);
+	static const void clearAutos(std::vector<Auto*> all);
 
 	_MenuCase PrintClients();
 	_MenuCase PrintAutos();
@@ -52,14 +54,20 @@ public:
 	_MenuCase CreateRandClients();
 	_MenuCase InsertAuto();
 	_MenuCase CreateRandAutos();
+
 	_MenuCase RentAnAuto();
 	_MenuCase ReturnAnAuto();
 	_MenuCase MoveToRepair();
 	_MenuCase BackFromRepair();
 
 	_MenuCase RemoveClient();
-	_MenuCase ClearClient();
+	_MenuCase ClearClients();
+	_MenuCase RemoveAuto();
+	_MenuCase ClearAutos();
 
-	//_MenuCase RemoveClient();
+	_MenuCase FindClient();
+	_MenuCase FindClients();
+	_MenuCase FindAuto();
+	_MenuCase FindAutos();
 };
 

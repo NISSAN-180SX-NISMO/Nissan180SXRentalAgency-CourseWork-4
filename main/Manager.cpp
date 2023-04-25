@@ -10,6 +10,7 @@ std::string Manager::EventsPath = "EventsPrinter.txt";
 
 std::string Manager::Request::input(const std::string& title, std::function<bool(std::string)> predicat)
 {
+	_Util::ShowConsoleCursor(true);
 	while (true) {
 		std::cout << title; getline(std::cin, UserInput);
 		FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
@@ -17,6 +18,7 @@ std::string Manager::Request::input(const std::string& title, std::function<bool
 		if (predicat(UserInput)) return UserInput;
 		else std::cout << "\tНеверный формат записи!!!" << std::endl;
 	}
+	_Util::ShowConsoleCursor(false);
 }
 
 Client* Manager::Request::Driver()
@@ -110,11 +112,11 @@ const bool Manager::DriverIsDebtor(Client* Driver)
 	bool IsDebtor;
 	auto Trades = Events->findAll(Driver->DriversNumber);
 	for (auto& Trade : Trades) {
-		if (Trade->Event == Event::EVENT::RENTAL) {
+		if (Trade->Act == Event::EVENT::RENTAL) {
 			IsDebtor = true;
 			for (auto& Event : Trades) {
 				if (Trade == Event) continue;
-				if (Trade->AutoNumber == Event->AutoNumber && Event->Event == Event::EVENT::RETURN)
+				if (Trade->AutoNumber == Event->AutoNumber && Event->Act == Event::EVENT::RETURN)
 					IsDebtor = false;
 			}
 			if (IsDebtor) return true;
@@ -135,7 +137,7 @@ const uint32_t Manager::size(DBT what)
 const void Manager::setRentAnAuto(Auto* Car, Event* Trade)
 {
 	Car->inStock = false;
-	Trade->Event = Event::EVENT::RENTAL;
+	Trade->Act = Event::EVENT::RENTAL;
 	Events->insert(_Util::getKey(Trade->AutoNumber), Trade);
 }
 
@@ -148,7 +150,7 @@ const void Manager::setReturnAnAuto(Auto* Car)
 	ReturnTrade->DriversNumber = Trade->DriversNumber;
 	ReturnTrade->BeginDate = Trade->BeginDate;
 	ReturnTrade->EndDate = Trade->EndDate;
-	ReturnTrade->Event = Event::EVENT::RETURN;
+	ReturnTrade->Act = Event::EVENT::RETURN;
 	Events->insert(_Util::getKey(ReturnTrade->AutoNumber), ReturnTrade);
 }
 
@@ -160,7 +162,7 @@ const void Manager::setMoveToRepair(Auto* Car)
 	RepairTrade->DriversNumber = Trade->DriversNumber;
 	RepairTrade->BeginDate = Trade->BeginDate;
 	RepairTrade->EndDate = Trade->EndDate;
-	RepairTrade->Event = Event::EVENT::TO_REPAIR;
+	RepairTrade->Act = Event::EVENT::TO_REPAIR;
 	Events->insert(_Util::getKey(RepairTrade->AutoNumber), RepairTrade);
 }
 
@@ -172,7 +174,7 @@ const void Manager::setBackFromRepair(Auto* Car)
 	RepairTrade->DriversNumber = Trade->DriversNumber;
 	RepairTrade->BeginDate = Trade->BeginDate;
 	RepairTrade->EndDate = Trade->EndDate;
-	RepairTrade->Event = Event::EVENT::FROM_REPAIR;
+	RepairTrade->Act = Event::EVENT::FROM_REPAIR;
 	Events->insert(_Util::getKey(RepairTrade->AutoNumber), RepairTrade);
 }
 
@@ -183,10 +185,29 @@ const bool Manager::removeClient(Client* Driver)
 	return true;
 }
 
+const void Manager::clearClients(std::vector<Client*> all)
+{
+	for (auto& Driver : all)
+		removeClient(Driver);
+}
+
+const bool Manager::removeAuto(Auto* Car)
+{
+	if (!Car->inStock) return false;
+	else Autos->remove(_Util::getKey(Car->AutoNumber));
+	return true;
+}
+
+const void Manager::clearAutos(std::vector<Auto*> all)
+{
+	for (auto& Car : all)
+		removeAuto(Car);
+}
+
 const void Manager::PrintClients()
 {
 	std::ofstream fout(ClientsPath);
-	_Print::print(fout, Clients);
+	_Print::print(fout, Clients->getAll());
 	fout.close();
 	std::string start = "start " + ClientsPath;
 	system(start.c_str());
@@ -195,7 +216,7 @@ const void Manager::PrintClients()
 const void Manager::PrintAutos()
 {
 	std::ofstream fout(AutosPath);
-	_Print::print(fout, Autos);
+	_Print::print(fout, Autos->getAll());
 	fout.close();
 	std::string start = "start " + AutosPath;
 	system(start.c_str());
@@ -204,7 +225,7 @@ const void Manager::PrintAutos()
 const void Manager::PrintEvents()
 {
 	std::ofstream fout(EventsPath);
-	_Print::print(fout, Events);
+	_Print::print(fout, Events->getAll());
 	fout.close();
 	std::string start = "start " + EventsPath;
 	system(start.c_str());
@@ -317,13 +338,87 @@ const void Manager::RemoveClient()
 	_Util::pause(); 
 }
 
-const void Manager::ClearClient()
+const void Manager::ClearClients()
 {
 	auto Drivers = Clients->getAll();
-	for (auto& Driver : Drivers)
-		removeClient(Driver);
+	clearClients(Drivers);
 	std::cout << "\tСписок очищен!" << std::endl;
 	_Util::pause();
 }
 
+const void Manager::RemoveAuto()
+{
+	auto Car = Request::FindAuto();
+	if (removeAuto(Car)) std::cout << "\tАвто успешно удалено!" << std::endl;
+	else std::cout << "\tДанное авто в аренде!!! Вы не можете его удалить!!!" << std::endl;
+	_Util::pause();
+}
 
+const void Manager::ClearAutos()
+{
+	auto Cars = Autos->getAll();
+	clearAutos(Cars);
+	std::cout << "\tСписок очищен!" << std::endl;
+	_Util::pause();
+}
+
+const void Manager::FindClient()
+{
+	std::cout << std::endl;
+	std::string DriversNumber = Request::input("\tВведите номер водительского удостоверения. Пример: NN AA NNNNNN: ", _Pred::forDriversNumber);
+	auto Driver = Clients->find(_Util::getKey(DriversNumber));
+	if (!Driver) {
+		std::cout << "Такой клиент не найден!!!" << std::endl;
+		_Util::pause(); return;
+	}
+	_Print::print(std::cout, std::vector<Client*>{Driver});
+	auto Trade = Events->findAll(DriversNumber);
+	if (!Trade.size()) std::cout << "\tЗа клиентом не закреплено авто!" << std::endl;
+	else std::cout << "\tНомер авто, располагаемого в пользовании: " << Trade[0]->AutoNumber << std::endl;
+	_Util::pause();
+}
+
+const void Manager::FindClients()
+{
+	std::cout << std::endl;
+	std::string chunk = Request::input("\tВведите фрагмент ФИО или адреса: ");
+	auto Drivers = Clients->findAll(chunk);
+	if (!Drivers.size()) {
+		std::cout << "Клиенты не найдены!!!" << std::endl;
+		_Util::pause(); return;
+	}
+	_Print::print(std::cout, Drivers);
+	_Util::pause();
+}
+
+const void Manager::FindAuto()
+{
+	std::cout << std::endl;
+	std::string AutoNumber = Request::input("\tВведите регистрационный номер. Пример: ANNNAA-NN: ", _Pred::forAutosNumber);
+	auto Car = Autos->find(_Util::getKey(AutoNumber));
+	if (!Car) {
+		std::cout << "Такое авто не найдено!!!" << std::endl;
+		_Util::pause(); return;
+	}
+	if (Car->inStock) std::cout << "\tАвто не находится в аренде!" << std::endl;
+	else {
+		_Print::print(std::cout, std::vector<Auto*> {Car});
+		auto Trade = Events->find(_Util::getKey(Car->AutoNumber));
+		auto Driver = Clients->find(_Util::getKey(Trade->DriversNumber));
+		std::cout << "\tФИО клиента: " << Driver->Name << ", номер удостоверения: " << Driver->DriversNumber << std::endl;
+	}
+	_Util::pause();
+}
+
+const void Manager::FindAutos()
+{
+	std::cout << std::endl;
+	std::string Brand = Request::input("\tВведите название марки авто: ");
+	auto Cars = Autos->findAll(Brand);
+	if (!Cars.size()) {
+		std::cout << "Авто не найдены!!!" << std::endl;
+		_Util::pause(); return;
+	}
+	_Print::print(std::cout, Cars);
+	_Util::pause();
+}
